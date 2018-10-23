@@ -1,13 +1,10 @@
 import numpy as np
 from math import cos, acos, sin, tan, pi, sqrt
 
-transMatrix = np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0 ,3], [0, 0, 0, 1]])
-e = 10**-6
+t = np.array([[1, 0, 0, 2], [0, 1, 0, 0], [0, 0, 1 ,0], [0, 0, 0, 1]])
 q1 = np.array([0, 2, 0])
 s1 = np.array([0, 0, 1])
 h1 = 2
-#pi = 3.14159
-#theta = np.array([0,pi/4,pi/2, 3*pi/4]) 
 theta0 = 0
 theta1 = pi/4
 theta2 = pi/2
@@ -19,23 +16,26 @@ def ScrewToAxis(q, s, h):
 def VecToso3(omg):
 	return [[0, -omg[2], omg[1]], [omg[2], 0, -omg[0]], [-omg[1], omg[0], 0]]
 
+def RpToTrans(R, p):
+	return np.r_[np.c_[R, p], [[0, 0, 0, 1]]]
+
+def TransToRp(T):
+	R = [[T[0][0], T[0][1], T[0][2]], [T[1][0], T[1][1], T[1][2]], [T[2][0], T[2][1], T[2][2]]]
+	return R, [T[0][3], T[1][3], T[2][3]]
+
 def RodForm(theta, w):
-	I = np.identity(3)
-	#I = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-	R = I + np.multiply(sin(theta),+w) + np.multiply(1-cos(theta),(w**2))
-	print("value of R: ")
-	print(R)
-	#return R
+	I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+	output = np.multiply(I, theta)
+	output2 = np.multiply(1 - cos(theta), newW)
+	output3_1 = theta - sin(theta)
+	output3_2 = np.matmul(newW, newW)
+	output3 = np.multiply(output3_1, output3_2)
+	R  = output + output2 + output3
+	return R
 
 s = ScrewToAxis(q1, s1, h1)
 w = np.array([s[0], s[1], s[2]])
 v = np.array([s[3], s[4], s[5]])
-
-newW = VecToso3(w)
-newV = VecToso3(v)
-
-#Rodrigues' Formula
-r = RodForm(theta1, newW)
 
 print("Angular velocity: ")
 print(w)
@@ -44,6 +44,9 @@ print(v)
 
 print(" ")
 
+newW = VecToso3(w)
+newV = VecToso3(v)
+
 print("Skew w: ")
 print(newW)
 print("Skew v: ")
@@ -51,61 +54,69 @@ print(newV)
 
 print(" ")
 
-print("Rodriges' Formula: ")
-print(r)
-'''
-def NearZero(z):
-	return abs(z) < 1e-6
+#Rodrigues' Formula
+r0 = RodForm(theta0, newW)
+r1 = RodForm(theta1, newW)
+r2 = RodForm(theta2, newW)
+r3 = RodForm(theta3, newW)
 
-def TransToRp(T):
-	R = [[T[0][0], T[0][1], T[0][2]], [T[1][0], T[1][1], T[1][2]], [T[2][0], T[2][1], T[2][2]]]
-	return R, [T[0][3], T[1][3], T[2][3]]
+print("Rodriges' Formula 0: ")
+print(r0)
+print("Rodriges' Formula 1: ")
+print(1)
+print("Rodriges' Formula 2: ")
+print(r2)
+print("Rodriges' Formula 3: ")
+print(r3)
 
-def MatrixLog3(R):
-	if NearZero(np.linalg.norm(R - np.eye(3))):
-		return np.zeros(3,3)
-	elif NearZero(np.trace(R) + 1):
-		if not NearZero(1 + R[2][2]):
-			omg = (1.0 / sqrt(2 * (1 + R[2][2]))) * np.array([R[0][2], R[1][2], 1 + R[2][2]])
-		elif not NearZero(1 + R[1][1]): 
-			omg = (1.0 / sqrt(2 * (1 + R[1][1]))) * np.array([R[0][1], 1 + R[1][1], R[2][1]])
-		else:
-			omg = (1.0 / sqrt(2 * (1 + R[0][0]))) * np.array([1 + R[0][0], R[1][0], R[2][0]])
-		return VecToso3(pi*omg)
-	else:
-		acosinput = (np.trace(R) - 1) / 2.0
-		if acosinput > 1:
-			acosinput = 1
-		elif acosinput < -1:
-			acosinput = -1		
-		theta = acos(acosinput)
-		return theta / 2.0 / sin(theta) * (R - np.array(R).T)
+print(" ")
 
-def MatrixLog6(T):
-	R,p = TransToRp(T)
-	if NearZero(np.linalg.norm(R - np.eye(3))):
-		return np.r_[np.c_[np.zeros((3,3)), [T[0][3], T[1][3], T[2][3]]], [[0, 0, 0, 0]]]
-	else: 
-		acosinput = (np.trace(R) - 1) / 2.0
-		if acosinput > 1:
-			acosinput = 1
-		elif acosinput < -1:
-			acosinput = -1		
-		theta = acos(acosinput)       
-		omgmat = MatrixLog3(R) 
-		return np.r_[np.c_[omgmat, np.dot(np.eye(3) - omgmat / 2.0 + (1.0 / theta - 1.0 / tan(theta / 2.0) / 2) * np.dot(omgmat, omgmat) / theta, [T[0][3], T[1][3], T[2][3]])], [[0, 0, 0, 0]]]
+def matrixTransform(rod):
+	#colum vector of exponential matrix
+	p = np.matmul(rod, v)
 
-resultExponCoord = MatrixLog6(transMatrix)
-print("EXPONENTIAL COORDINATES")
-print(resultExponCoord)
+	matrixRT, matrixPT = TransToRp(t)
 
-def AxisAng6(expc6):
-	theta = np.linalg.norm([expc6[0], expc6[1], expc6[2]])
-	if NearZero(theta):
-		theta = np.linalg.norm([expc6[3], expc6[4], expc6[5]])
-	return (expc6 / theta,theta)
+	rTPrime  = np.matmul(rod, matrixRT)
+	pTPrime = np.matmul(rod, matrixPT) + p
 
-resultS = AxisAng6(resultExponCoord)
-print("VALUE OF S")
-print(resultS)
-'''
+	matrixTPrime = RpToTrans(rTPrime, pTPrime)
+
+	print("Column vecotr of exponential matrix: ")
+	print(p)
+
+	print(" ")
+
+	print("Value of R given matrix T: ")
+	print(matrixRT)
+	print("Value of p given matrix T: ")
+	print(matrixPT)
+
+	print(" ")
+
+
+	return matrixTPrime
+
+tPrime0 = matrixTransform(r0)
+tPrime1 = matrixTransform(r1)
+tPrime2 = matrixTransform(r2)
+tPrime3 = matrixTransform(r3)
+
+
+print("Value of T0: ")
+print(tPrime0)
+
+print(" ")
+
+print("Value of T1: ")
+print(tPrime1)
+
+print(" ")
+
+print("Value of T2: ")
+print(tPrime2)
+
+print(" ")
+
+print("Value of T3: ")
+print(tPrime3)
