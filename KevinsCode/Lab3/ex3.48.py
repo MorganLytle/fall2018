@@ -3,11 +3,57 @@ from math import cos, acos, sin, tan, pi, sqrt
 
 transMatrix = np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0 ,3], [0, 0, 0, 1]])
 e = 10**-6
-q = np.array([0, 2, 0])
-s = np.array([0, 0, 1])
-h = 2
-th = pi
+q1 = np.array([0, 2, 0])
+s1 = np.array([0, 0, 1])
+h1 = 2
+#pi = 3.14159
+#theta = np.array([0,pi/4,pi/2, 3*pi/4]) 
+theta0 = 0
+theta1 = pi/4
+theta2 = pi/2
+theta3 = 3*pi/4
 
+def ScrewToAxis(q, s, h):
+	return np.r_[s, np.cross(q, s) + np.dot(h, s)]
+
+def VecToso3(omg):
+	return [[0, -omg[2], omg[1]], [omg[2], 0, -omg[0]], [-omg[1], omg[0], 0]]
+
+def RodForm(theta, w):
+	I = np.identity(3)
+	#I = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+	R = I + np.multiply(sin(theta),+w) + np.multiply(1-cos(theta),(w**2))
+	print("value of R: ")
+	print(R)
+	#return R
+
+s = ScrewToAxis(q1, s1, h1)
+w = np.array([s[0], s[1], s[2]])
+v = np.array([s[3], s[4], s[5]])
+
+newW = VecToso3(w)
+newV = VecToso3(v)
+
+#Rodrigues' Formula
+r = RodForm(theta1, newW)
+
+print("Angular velocity: ")
+print(w)
+print("Linear velocity: ")
+print(v)
+
+print(" ")
+
+print("Skew w: ")
+print(newW)
+print("Skew v: ")
+print(newV)
+
+print(" ")
+
+print("Rodriges' Formula: ")
+print(r)
+'''
 def NearZero(z):
 	return abs(z) < 1e-6
 
@@ -62,3 +108,4 @@ def AxisAng6(expc6):
 resultS = AxisAng6(resultExponCoord)
 print("VALUE OF S")
 print(resultS)
+'''
