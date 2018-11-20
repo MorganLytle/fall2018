@@ -32,8 +32,8 @@ class turtlebot_move():
 		vel.angular.z = 0
 
 		#START LAB4 CODE
-		rate = rospy.Rate(100);    #initialize clockspeed TO 100 hertz
-		currT = rospy.Time(0);     #obtain initial time
+		rate = rospy.Rate(100)    #initialize clockspeed TO 100 hertz
+		currT = rospy.Time(0)     #obtain initial time
 		diffT = 0     #diffT tracks counter of 10 secs before turning
 		prevT = 0     #assign currT to prevT for next iteration
 
@@ -49,24 +49,22 @@ class turtlebot_move():
 
    
 		while not rospy.is_shutdown():
-			currT = rospy.Time.now();  #retrieve updated time each cylce        
-			if prevT == 0:
+			currT = rospy.Time.now()  #retrieve updated time each cylce        
+	
+			if(prevT == 0):
 				prevT = currT   # reset prevT to minimize jump at beginning of movement
 				diffT = diffT + currT.to_sec() - prevT.to_sec() #diff between clock cycles
-			try:
-				(position, quaternion) = tfListener.lookupTransform("/odom", "/base_footprint", rospy.Time(0)) # get position and quaternion orientation of robot
-			except:
-				continue
+				try:
+					(position, quaternion) = tfListener.lookupTransform("/odom", "/base_footprint", rospy.Time(0)) # get position and quaternion orientation of robot
+				except:
+					continue
 				orientation = tf.transformations.euler_from_quaternion(quaternion)  # convert quaternion to Euler agle orientation in form of [roll, pitch, yaw]
-       
-
 				curr_phi = orientation[2]   # get current yaw orientation
 				diff_phi = desired_phi - curr_phi   # find difference for proportional term
 				compare_phi = diff_phi - prev_diff_phi  # find difference for derivative term
 				omega = kp * diff_phi + kd * compare_phi    # adjust angular roation based on PD-controller
 
-			if diffT >= 10:
-	
+			if(diffT >= 10):
 				# stop robot when reached corner to allow to change orientation
 				rospy.loginfo("Stop Action")
 				stop_vel = Twist()
@@ -81,13 +79,13 @@ class turtlebot_move():
 				vel.angular.z = math.pi/2
 	
 				# change desired_phi to next angle; keep within range of [-pi, pi]
-				if desired_phi == math.pi:
+				if(desired_phi == math.pi):
 					desired_phi = -math.pi/2
 				else:
 					desired_phi = desired_phi + math.pi/2
 			else:
 				# move robot forward and rotate at a rate of omega to stay in a straight path
-				vel.linear.x = .5
+				vel.linear.x = 0.5
 				vel.angular.z = omega
 				prevT = currT   # update prevT to be the currT
 				prev_diff_phi = diff_phi   # update prev_diff_phi to be current diff_phi for derivative
