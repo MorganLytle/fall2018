@@ -43,14 +43,17 @@ class turtlebot_move():
 		diff_phi = 0    #difference between desired and current orientation
 		prev_diff_phi = 0 #stores previous val for diff phi, for pd controller 
 		compare_phi = 0 #stores difference (derivative) between both phi vals  
-		kp = 1    #P-controller constant
-		kd = 1          #D-controller constant
+		kp = .01    #P-controller constant
+		kd = .1          #D-controller constant
+		kpTurn = .1
+		kdTurn = .1
 		#rospy.loginfo("position: "+str(position))
 		#rospy.loginfo("orientation: "+str(orientation))
 		case = 1 #0=stop/1=go/2=turn
 		startTime = rospy.Time.now()
 		elapsedTime = 0
 		desiredTurnAngle = pi/2
+		threshold = .1
 		while not rospy.is_shutdown():
 			currT = rospy.Time.now();  #retrieve updated time each cycle        
                         #print(case) 
@@ -69,6 +72,7 @@ class turtlebot_move():
                         compare_phi = diff_phi - prev_diff_phi  # find difference for derivative term
 			elapsedTime = currT.to_sec() - startTime.to_sec() 
 			#print(elapsedTime)	
+			print(case)
 			if (case == 0):
 				#stop case
 				#stop for 1 second
@@ -93,8 +97,12 @@ class turtlebot_move():
                                 #prev_diff_phi = diff_phi   # update prev_diff_phi to be current diff_phi for derivative
                                 #self.set_velocity.publish(vel) #published command to robot
 				#compare_phi = diff_phi - prev_diff_phi  # find difference for derivative term
+                        	prev_diff_phi = diff_phi
+                        	diff_phi = desired_phi - curr_phi   # find difference for proportional term
+                        	compare_phi = diff_phi - prev_diff_phi  # find difference for derivative term
 				if(elapsedTime <= 10):
 					omega = kp * diff_phi + kd * compare_phi    # adjust angular roation based on PD-controller
+					print(diff_phi)
 					vel.linear.x = .5
 					vel.angular.z = omega
 					self.set_velocity.publish(vel) #published command to robot
@@ -103,13 +111,19 @@ class turtlebot_move():
 					startTime = rospy.Time.now()
 					elapsedTime = 0
 			elif(case == 2):
+				#print(curr_phi)
 				#turn case
-				'''
+				
+				prev_diff_phi = diff_phi
+                          	diff_phi = desired_phi - curr_phi + pi/2   # find difference for proportional term
+                          	compare_phi = diff_phi - prev_diff_phi  # find difference for derivative term
+				omega = kpTurn* diff_phi + kdTurn * compare_phi
+				print(omega)
 				if(desired_phi == pi/2):
-					if(curr_phi <= (pi-.02)):
-						print(curr_phi)
+					if((curr_phi <= (pi-threshold)) and(curr_phi >= -pi+threshold )):
+						#print(curr_phi)
                                         	vel.linear.x = 0
-                                        	vel.angular.z = pi/2
+                                        	vel.angular.z = omega
                                         	self.set_velocity.publish(vel)
 					else:
                                         	vel.linear.x = 0
@@ -119,6 +133,7 @@ class turtlebot_move():
                                         	case = 1
                                         	elapsedTime = 0
                                         	startTime = rospy.Time.now()
+<<<<<<< HEAD
 						desired_phi = -pi
 				else:
 				'''
@@ -128,18 +143,43 @@ class turtlebot_move():
                                        	vel.angular.z = pi/2
 					self.set_velocity.publish(vel)
 					
-				else:
-					vel.linear.x = 0
-                                       	vel.angular.z = 0
-					self.set_velocity.publish(vel)
+=======
+						desired_phi = pi
+				elif(desired_phi == pi):
+					if((curr_phi <= (-pi/2 - threshold)) or (curr_phi >= -pi/2 + threshold )):
+                                                #print(curr_phi)
+                                                vel.linear.x = 0
+                                                vel.angular.z = omega
+                                                self.set_velocity.publish(vel)
+                                        else:
+                                                vel.linear.x = 0
+                                                vel.angular.z = 0
+                                                self.set_velocity.publish(vel)
+ 
+                                                case = 1                                                 
+						elapsedTime = 0
+                                                startTime = rospy.Time.now()
+						desired_phi = -pi/2
 
-					case = 1
-					elapsedTime = 0
-					startTime = rospy.Time.now()
-					if (desired_phi == pi):
-                                               	desired_phi = -pi/2
-                                    	else:
-                                               	desired_phi = desired_phi + pi/2
+>>>>>>> 4db588c9cc33f89a4477ded718cd8038d6986dab
+				else:
+				
+ 					if(curr_phi <= desired_phi + pi/2 - threshold):
+						vel.linear.x = 0
+                                       		vel.angular.z = omega 
+						self.set_velocity.publish(vel)
+					else:
+						vel.linear.x = 0
+                                       		vel.angular.z = 0
+						self.set_velocity.publish(vel)
+
+						case = 1
+						elapsedTime = 0
+						startTime = rospy.Time.now()
+						if (desired_phi == pi):
+                                               		desired_phi = -pi/2
+                                    		else:
+                                               		desired_phi = desired_phi + pi/2
 
 
 
