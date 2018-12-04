@@ -65,109 +65,117 @@ class turtlebot_move():
                 (position, quaternion) = tfListener.lookupTransform("/odom", "/base_footprint", rospy.Time(0))
             except:
                 continue
-	    
-	    # get x and y position of the current waypoint
-            x_way = waypoints[i_way][0]
-            y_way = waypoints[i_way][1]
 
-	    # get x and y position of robot
-            x_pos = position[0]
-            y_pos = position[1]
-	    
-            # find distance from waypoint
-            dist = math.sqrt((x_way - x_pos)**2 + (y_way - y_pos)**2)
-
-            orientation = tf.transformations.euler_from_quaternion(quaternion)
-	    # determine which quadrant the waypoint is in with reference to the robot's frame
-	    #  2 | 1
-	    # -------
-	    #  3 | 4
-	    # assign temporary point make right triangle for trig calculations
-            x_temp = x_way
-            y_temp = y_pos
-	
-            curr_phi = orientation[2]   # get current yaw orientation
-
-	    # check if waypoint and robot on same x
-            if(x_pos == x_way):
-	        # find angle
-                if(y_pos < y_way): # waypoint is directly above robot
-                    desired_phi = math.pi/2
-                elif(y_pos > y_way): # waypoint is directly below robot
-                    desired_phi = -math.pi/2
-
-	    # check if waypoint and robot on same y
-            elif(y_pos == y_way):
-	        # find angle
-                if(x_pos < x_way): # waypoint is directly right robot
-                    desired_phi = 0
-                elif(x_pos > x_way): # waypoint is directly left robot
-                    desired_phi = -math.pi
-
-	    # determine opposite side length of triangle
+	    if(curr_phi >= -math.pi/2):
+            	vel.linear.x = 0
+            	vel.angular.z = -math.pi/2
+            	self.vel_pub.publish(vel)
+            	rate.sleep()
             else:
-                # distance of opposite leg of triangle (for calculating theta)
-                dist_tri = abs(y_way - y_temp)
-		# find angle theta
-                theta = math.asin(dist_tri/dist)
+	    
+	    	if(curr_phi >= -math.py):	    
+	    		# get x and y position of the current waypoint
+            		x_way = waypoints[i_way][0]
+            		y_way = waypoints[i_way][1]
+
+	    		# get x and y position of robot
+            		x_pos = position[0]
+            		y_pos = position[1]
+	    
+            		# find distance from waypoint
+            		dist = math.sqrt((x_way - x_pos)**2 + (y_way - y_pos)**2)
+
+            		orientation = tf.transformations.euler_from_quaternion(quaternion)
+	    		# determine which quadrant the waypoint is in with reference to the robot's frame
+	    		#  2 | 1
+	    		# -------
+	    		#  3 | 4
+	   		# assign temporary point make right triangle for trig calculations
+            		x_temp = x_way
+            		y_temp = y_pos
+	
+            		curr_phi = orientation[2]   # get current yaw orientation
+
+	    		# check if waypoint and robot on same x
+            		if(x_pos == x_way):
+	        		# find angle
+                		if(y_pos < y_way): # waypoint is directly above robot
+                    			desired_phi = math.pi/2
+                		elif(y_pos > y_way): # waypoint is directly below robot
+                    			desired_phi = -math.pi/2
+
+	    		# check if waypoint and robot on same y
+            		elif(y_pos == y_way):
+	        		# find angle
+                		if(x_pos < x_way): # waypoint is directly right robot
+                    			desired_phi = 0
+                		elif(x_pos > x_way): # waypoint is directly left robot
+                    			desired_phi = -math.pi
+
+	    		# determine opposite side length of triangle
+            		else:
+                		# distance of opposite leg of triangle (for calculating theta)
+                		dist_tri = abs(y_way - y_temp)
+				# find angle theta
+                		theta = math.asin(dist_tri/dist)
 		
-                # check which quadrant the way point is in in relation to robot
-                # this will determine the desired orientation to reach waypoint
-                if(x_way > x_pos):	# in either quadrant 1 or 4
-                    if(y_way > y_pos):	# in quadrant 1
-                        desired_phi = theta
-                    elif(y_way < y_pos): # in quadrant 4
-                        desired_phi = -theta
-                elif(x_way < x_pos): # in either quadrant 2 or 3
-                    if(y_way > y_pos):	# in quadrant 2
-                        desired_phi = math.pi - theta
-                    elif(y_way < y_pos): # in quadrant 3
-                        desired_phi = -math.pi + theta
+                		# check which quadrant the way point is in in relation to robot
+                		# this will determine the desired orientation to reach waypoint
+                		if(x_way > x_pos):	# in either quadrant 1 or 4
+                    			if(y_way > y_pos):	# in quadrant 1
+                        			desired_phi = theta
+                    			elif(y_way < y_pos): # in quadrant 4
+                        			desired_phi = -theta
+                		elif(x_way < x_pos): # in either quadrant 2 or 3
+                    			if(y_way > y_pos):	# in quadrant 2
+                        			desired_phi = math.pi - theta
+                    			elif(y_way < y_pos): # in quadrant 3
+                        			desired_phi = -math.pi + theta
 
-            diff_phi = desired_phi - curr_phi   # find difference for proportional term
+            		diff_phi = desired_phi - curr_phi   # find difference for proportional term
 
-	    if diff_phi < -math.pi:
-		diff_phi = diff_phi + 2*math.pi
-	    elif diff_phi > math.pi:
-		diff_phi = diff_phi - 2*math.pi
+	    		if diff_phi < -math.pi:
+				diff_phi = diff_phi + 2*math.pi
+	    		elif diff_phi > math.pi:
+				diff_phi = diff_phi - 2*math.pi
 
-            omega = kp * diff_phi   # adjust angular rotation based on P-controller	
+            		omega = kp * diff_phi   # adjust angular rotation based on P-controller	
 
 
-            if dist < dthresh:	# if within distance
-		# stop robot when reached corner to allow to change orientation
-                rospy.loginfo("Stop Action")
-                stop_vel = Twist()
-                stop_vel.linear.x = 0
-                stop_vel.angular.z = 0
-                self.set_velocity.publish(stop_vel)
-                rospy.sleep(1)
+            		if dist < dthresh:	# if within distance
+				# stop robot when reached corner to allow to change orientation
+                		rospy.loginfo("Stop Action")
+                		stop_vel = Twist()
+                		stop_vel.linear.x = 0
+                		stop_vel.angular.z = 0
+                		self.set_velocity.publish(stop_vel)
+                		rospy.sleep(1)
 
 		
-                # update waypoint index
-                if i_way < len(waypoints)-1: # increment to next waypoint
-                    i_way = i_way + 1
-                else: # loop back to first waypoint
-                    i_way = 0
-                print(waypoints[i_way])
+                		# update waypoint index
+                		if i_way < len(waypoints)-1: # increment to next waypoint
+                    			i_way = i_way + 1
+                		else: # loop back to first waypoint
+                    			i_way = 0
+                			print(waypoints[i_way])
 		
-		#x_path.append(x_pos)
-		#y_path.append(y_pos)
-	    else:
-                vel.linear.x = .3
-		if omega > .7:                
-		    vel.angular.z = .7
-		elif omega < -.7:
-		    vel.angular.z = -.7
-		else:
-		    vel.angular.z = omega
+					#x_path.append(x_pos)
+					#y_path.append(y_pos)
+	    		else:
+                		vel.linear.x = .3
+				if omega > .7:                
+		    			vel.angular.z = .7
+				elif omega < -.7:
+		    			vel.angular.z = -.7
+				else:
+		    			vel.angular.z = omega
             
-	    dPhi = diff_phi * 180 / 3.14
-	    currPhiD = curr_phi * 180/3.14
-	    desPhi = desired_phi * 180/3.14
-	    print("at index %d, diff_phi = %d",i_way,  currPhiD, desPhi ) 
-            self.set_velocity.publish(vel) #published command to robot
-            rate.sleep()
+	    		dPhi = diff_phi * 180 / 3.14
+	    		currPhiD = curr_phi * 180/3.14
+	    		desPhi = desired_phi * 180/3.14
+	    		print("at index %d, diff_phi = %d",i_way,  currPhiD, desPhi ) 
+            		self.set_velocity.publish(vel) #published command to robot
+            		rate.sleep()
 
 	######################################################## End Lab6 Code
                         

@@ -50,7 +50,7 @@ class turtlebot_move():
         vel.linear.x = 0.5
 	vel.angular.z = 0
 	
-	######################################################## Start final lab Code
+	######################################################## Start final project Code
 
         rate = rospy.Rate(100)
 
@@ -59,7 +59,7 @@ class turtlebot_move():
         diff_phi = 0    # the difference between orientations for P-controller
         kp = 2.5          # P-controller constant
 
-	# lab 6 new vars
+	#final project new vars
         i_way = 0   # index of waypoint
 
         while not rospy.is_shutdown():
@@ -67,51 +67,48 @@ class turtlebot_move():
                 (position, quaternion) = tfListener.lookupTransform("/odom", "/base_footprint", rospy.Time(0))
             except:
                 continue
-	    if(curr_phi >= -math.pi/2):
-		vel.linear.x = 0
-		vel.angular.z = -math.pi/2
-		self.vel_pub.publish(vel)
-		rate.sleep()
-	    else:
-
-		# get x and y position of the current waypoint
-        	x_way = waypoints[i_way][0]
-           	y_way = waypoints[i_way][1]
-
-	   	# get x and y position of robot
-           	x_pos = position[0]
-            	y_pos = position[1]
 	    
-            	# find distance from waypoint
-            	dist = math.sqrt((x_way - x_pos)**2 + (y_way - y_pos)**2)
+	    # get x and y position of the current waypoint
+            x_way = waypoints[i_way][0]
+            y_way = waypoints[i_way][1]
 
-            	orientation = tf.transformations.euler_from_quaternion(quaternion)
-	    	# determine which quadrant the waypoint is in with reference to the robot's frame
-	    	# assign temporary point make right triangle for trig calculations
-            	x_temp = x_way
-           	y_temp = y_pos
+	    # get x and y position of robot
+            x_pos = position[0]
+            y_pos = position[1]
+	    
+            # find distance from waypoint
+            dist = math.sqrt((x_way - x_pos)**2 + (y_way - y_pos)**2)
+
+            orientation = tf.transformations.euler_from_quaternion(quaternion)
+	    # determine which quadrant the waypoint is in with reference to the robot's frame
+	    #  2 | 1
+	    # -------
+	    #  3 | 4
+	    # assign temporary point make right triangle for trig calculations
+            x_temp = x_way
+            y_temp = y_pos
 	
-            	curr_phi = orientation[2]   # get current yaw orientation
+            curr_phi = orientation[2]   # get current yaw orientation
 
-	    	# check if waypoint and robot on same x
-           	if(x_pos == x_way):
-	        	# find angle
-                	if(y_pos < y_way): # waypoint is directly above robot
-                    		desired_phi = math.pi/2
-                	elif(y_pos > y_way): # waypoint is directly below robot
-                    		desired_phi = -math.pi/2
+	    # check if waypoint and robot on same x
+            if(x_pos == x_way):
+	        # find angle
+                if(y_pos < y_way): # waypoint is directly above robot
+                    desired_phi = math.pi/2
+                elif(y_pos > y_way): # waypoint is directly below robot
+                    desired_phi = -math.pi/2
 
-	    	# check if waypoint and robot on same y
-           	elif(y_pos == y_way):
-	        	# find angle
-                	if(x_pos < x_way): # waypoint is directly right robot
-                    		desired_phi = 0
-                	elif(x_pos > x_way): # waypoint is directly left robot
-                    		desired_phi = -math.pi
+	    # check if waypoint and robot on same y
+            elif(y_pos == y_way):
+	        # find angle
+                if(x_pos < x_way): # waypoint is directly right robot
+                    desired_phi = 0
+                elif(x_pos > x_way): # waypoint is directly left robot
+                    desired_phi = -math.pi
 
-	    	# determine opposite side length of triangle
-            	else:
-                	# distance of opposite leg of triangle (for calculating theta)
+	    # determine opposite side length of triangle
+            else:
+                # distance of opposite leg of triangle (for calculating theta)
                 dist_tri = abs(y_way - y_temp)
 		# find angle theta
                 theta = math.asin(dist_tri/dist)
@@ -167,14 +164,14 @@ class turtlebot_move():
 		else:
 		    vel.angular.z = omega
             
-	    dPhi = diff_phi * 180 / math.pi
-	    currPhiD = curr_phi * 180 / math.pi
-	    desPhi = desired_phi * 180/ math.pi
+	    dPhi = diff_phi * 180 / pi
+	    currPhiD = curr_phi * 180 / pi
+	    desPhi = desired_phi * 180/ pi
 	    print("at index %d, diff_phi = %d",i_way,  currPhiD, desPhi ) 
             self.set_velocity.publish(vel) #published command to robot
             rate.sleep()
 
-	######################################################## End Lab6 Code
+	######################################################## End final project Code
                         
         
     def shutdown(self):
